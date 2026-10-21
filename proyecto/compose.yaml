@@ -1,0 +1,60 @@
+name: li16-ronald
+services:
+  namenode:
+    image: apache/hadoop:3.4.1
+    hostname: namenode
+    user: root
+    entrypoint: /bin/bash
+    command: ["-c", "mkdir -p /data/name; if [ ! -f /data/name/current/VERSION ]; then hdfs namenode -format -nonInteractive; fi; exec hdfs namenode"]
+    ports: ["127.0.0.1:9870:9870"]
+    volumes:
+      - namenode:/data/name
+      - ./config/core-site.xml:/opt/hadoop/etc/hadoop/core-site.xml:ro
+      - ./config/hdfs-site.xml:/opt/hadoop/etc/hadoop/hdfs-site.xml:ro
+  datanode:
+    image: apache/hadoop:3.4.1
+    hostname: datanode
+    user: root
+    entrypoint: /bin/bash
+    command: ["-c", "mkdir -p /data/data; exec hdfs datanode"]
+    depends_on: [namenode]
+    volumes:
+      - datanode:/data/data
+      - ./config/core-site.xml:/opt/hadoop/etc/hadoop/core-site.xml:ro
+      - ./config/hdfs-site.xml:/opt/hadoop/etc/hadoop/hdfs-site.xml:ro
+  hive-metastore:
+    image: apache/hive:4.0.1
+    hostname: hive-metastore
+    user: root
+    environment:
+      SERVICE_NAME: metastore
+      HIVE_CUSTOM_CONF_DIR: /hive_custom_conf
+      SERVICE_OPTS: "-Djavax.jdo.option.ConnectionURL=jdbc:derby:;databaseName=/data/metastore_db;create=true"
+    volumes:
+      - metastore:/data
+      - ./config/core-site.xml:/hive_custom_conf/core-site.xml:ro
+      - ./config/hdfs-site.xml:/hive_custom_conf/hdfs-site.xml:ro
+    depends_on: [namenode, datanode]
+    healthcheck:
+      test: ["CMD", "bash", "-c", "echo > /dev/tcp/localhost/9083"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+  hive-server:
+    image: apache/hive:4.0.1
+    hostname: hive-server
+    environment:
+      SERVICE_NAME: hiveserver2
+      IS_RESUME: "true"
+      HIVE_CUSTOM_CONF_DIR: /hive_custom_conf
+    ports: ["127.0.0.1:10000:10000", "127.0.0.1:10002:10002"]
+    volumes:
+      - ./config:/hive_custom_conf:ro
+    depends_on:
+      hive-metastore:
+        condition: service_healthy
+volumes:
+  namenode:
+  datanode:
+  metastore:

@@ -1,0 +1,20 @@
+# Scripts auxiliares y de generación interna de documentos
+scripts/
+iniciar_asistente.bat
+menu_evidencias.ps1
+
+# Registros temporales, logs y renders intermedios
+registros/
+tmp/
+*.log
+
+# Caches y compilados de Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Archivos de entorno y configuraciones de IDE
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

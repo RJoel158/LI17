@@ -18,3 +18,7 @@ __pycache__/
 .idea/
 .DS_Store
 Thumbs.db
+
+# Archivos comprimidos temporales
+*.zip
+
